@@ -1,65 +1,73 @@
 package ru.netology.sql.test;
 
-import com.codeborne.selenide.Configuration;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.netology.sql.data.DataHelper;
 import ru.netology.sql.data.SQLHelper;
-import ru.netology.sql.page.DashboardPage;
 import ru.netology.sql.page.LoginPage;
-import ru.netology.sql.page.VerificationPage;
 
+import static ru.netology.sql.data.SQLHelper.clearDataBase;
 import static com.codeborne.selenide.Selenide.open;
 
 public class LoginTests {
 
-    @BeforeEach
-    void setup() {
-        open("http://localhost:9999");
-        Configuration.holdBrowserOpen = true;
-    }
-
     @AfterAll
-    static void dropData() {
-        SQLHelper.cleanDataBase();
+    static void tearDown() {
+        clearDataBase();
     }
 
     @Test
-    void shouldPassVerification1() {
-        LoginPage loginPage = new LoginPage();
-        VerificationPage verificationPage = loginPage.validAuthInfo(DataHelper.getValidAuthInfo());
-        DashboardPage dashboardPage = verificationPage.validVerify(SQLHelper.getVerificationCode());
-        dashboardPage.shouldVisible();
+    void shouldLogin() {
+        var loginPage = open("http://localhost:9999", LoginPage.class);
+        var authInfo = DataHelper.getAuthInfoWithTestData();
+        var verificationPage = loginPage.validLogin(authInfo);
+        verificationPage.verifyVerificationPageVisibility();
+        var verificationCode = SQLHelper.getVerificationCode();
+        verificationPage.validVerify(verificationCode.getCode());
+
     }
 
     @Test
-    void shouldPassVerification2() {
-        LoginPage loginPage = new LoginPage();
-        VerificationPage verificationPage = loginPage.validAuthInfo(DataHelper.getValidOtherAuthInfo());
-        DashboardPage dashboardPage = verificationPage.validVerify(SQLHelper.getVerificationCode());
-        dashboardPage.shouldVisible();
+    void shouldFailWithIncorrectLogin() {
+        var loginPage = open("http://localhost:9999", LoginPage.class);
+        var authInfo = new DataHelper.AuthInfo(DataHelper.getRandomUser().getLogin(), DataHelper.getAuthInfoWithTestData().getPassword());
+        loginPage.validLogin(authInfo);
+        loginPage.getError();
     }
 
     @Test
-    void shouldTrowErrorMessageAfterInvWhenPasswordInvalid() {
-        LoginPage loginPage = new LoginPage();
-        loginPage.invalidAuthInfo(DataHelper.getInvalidAuthInfo());
-        loginPage.findErrorMessage("Ошибка! Неверно указан логин или пароль");
+    void shouldFailWithIncorrectPassword() {
+        var loginPage = open("http://localhost:9999", LoginPage.class);
+        var authInfo = new DataHelper.AuthInfo(DataHelper.getAuthInfoWithTestData().getLogin(), DataHelper.getRandomUser().getPassword());
+        loginPage.validLogin(authInfo);
+        loginPage.getError();
     }
 
     @Test
-    void shouldBlockPageWhenPasswordInvalidTriply() {
-        LoginPage loginPage = new LoginPage();
-        loginPage.invalidThreefoldPassword(DataHelper.getInvalidAuthInfo());
-        loginPage.findPopUp("Вы превысили лимит попыток ввода. Возможность ввода возобновится через 1 минуту");
+    void shouldBlockWhenPasswordFailedThreeTimes() {
+        var loginPage = open("http://localhost:9999", LoginPage.class);
+        var authInfo = new DataHelper.AuthInfo(DataHelper.getAuthInfoWithTestData().getLogin(), DataHelper.getRandomUser().getPassword());
+        loginPage.validLogin(authInfo);
+        loginPage.getError();
+        loginPage.cleanField();
+        var authInfo1 = new DataHelper.AuthInfo(DataHelper.getAuthInfoWithTestData().getLogin(), DataHelper.getRandomUser().getPassword());
+        loginPage.validLogin(authInfo1);
+        loginPage.getError();
+        loginPage.cleanField();
+        var authInfo2 = new DataHelper.AuthInfo(DataHelper.getAuthInfoWithTestData().getLogin(), DataHelper.getRandomUser().getPassword());
+        loginPage.validLogin(authInfo2);
+        loginPage.getBlockError();
     }
 
     @Test
-    void shouldThrowErrorWhenCodeInvalid() {
-        LoginPage loginPage = new LoginPage();
-        VerificationPage verificationPage = loginPage.validAuthInfo(DataHelper.getValidOtherAuthInfo());
-        verificationPage.invalidVerify(DataHelper.generateFakerCode());
-        verificationPage.findErrorMessage("Ошибка! Неверно указан код! Попробуйте ещё раз.");
+    void shouldFailWithIncorrectVerificationCode() {
+        var loginPage = open("http://localhost:9999", LoginPage.class);
+        var authInfo = DataHelper.getAuthInfoWithTestData();
+        var verificationPage = loginPage.validLogin(authInfo);
+        verificationPage.verifyVerificationPageVisibility();
+        var verificationCode = DataHelper.getRandomVerificationCode().getCode();
+        verificationPage.validVerify(verificationCode);
+        verificationPage.getError();
     }
+
 }
