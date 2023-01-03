@@ -16,7 +16,7 @@ public class SQLHelper {
     @SneakyThrows
     public static Connection getConn() {
         return DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/app", "masha", "mamamylaramu"
+                "jdbc:mysql://localhost:3306/app", "app", "pass"
         );
     }
 
