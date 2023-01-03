@@ -1,46 +1,38 @@
 package ru.netology.sql.data;
 
-
 import lombok.SneakyThrows;
 import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanListHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 
 public class SQLHelper {
-
     private static QueryRunner runner = new QueryRunner();
 
-    @SneakyThrows
-    public static Connection getConn() {
-        return DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/app", "app", "pass"
-        );
+    private SQLHelper() {
     }
 
+    @SneakyThrows
+    private static Connection getConn() {
+        return DriverManager.getConnection("jdbc:mysql://localhost:3306/app", "app", "pass");
+    }
 
     @SneakyThrows
-    public static DataHelper.VerificationInfo getVerificationCode() {
-
-        var dataSQL = "SELECT code FROM auth_codes ORDER BY created DESC";
+    public static ru.netology.sql.data.DataHelper.VerificationCode getVerificationCode() {
+        var codeSQL = "SELECT code FROM auth_codes ORDER BY created DESC LIMIT 1";
         try (var conn = getConn()) {
-            var result = runner.query(getConn(), dataSQL, new BeanListHandler<>(DataHelper.VerificationInfo.class));
-            return new DataHelper.VerificationInfo(result.get(0).getCode());
-        } catch (SQLException exception) {
-            exception.printStackTrace();
+            var result = runner.query(conn, codeSQL, new ScalarHandler<String>());
+            return new ru.netology.sql.data.DataHelper.VerificationCode(result);
         }
-        return null;
     }
 
     @SneakyThrows
-    public static void cleanDataBase() {
-        var conn = getConn();
-        runner.execute(getConn(), "DELETE FROM auth_codes");
-        runner.execute(getConn(), "DELETE FROM card_transactions");
-        runner.execute(getConn(), "DELETE FROM cards");
-        runner.execute(getConn(), "DELETE FROM users");
-
+    public static void clearDataBase() {
+        var connection = getConn();
+        runner.execute(connection, "DELETE FROM auth_codes");
+        runner.execute(connection, "DELETE FROM card_transactions");
+        runner.execute(connection, "DELETE FROM cards");
+        runner.execute(connection, "DELETE FROM users");
     }
 }

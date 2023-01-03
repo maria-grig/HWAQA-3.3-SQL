@@ -1,10 +1,10 @@
 package ru.netology.sql.data;
 
-
 import com.github.javafaker.Faker;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Value;
 
 import java.util.Locale;
 
@@ -12,45 +12,48 @@ public class DataHelper {
     private DataHelper() {
     }
 
-    private static Faker faker = new Faker(Locale.forLanguageTag("ru"));
+    private static Faker faker = new Faker(new Locale("en"));
 
-    public static AuthInfo getValidAuthInfo() {
-        return new AuthInfo("1", "vasya", "qwerty123", "active");
-    }
-
-    public static AuthInfo getValidOtherAuthInfo() {
-        return new AuthInfo("1", "petya", "123qwerty", "active");
-    }
-
-    public static AuthInfo getInvalidAuthInfo() {
-        return new AuthInfo("1", "vasya", faker.internet().password(), "active");
-    }
-
-
-    public static VerificationInfo generateFakerCode() {
-        return new VerificationInfo(Integer.toString(faker.number().randomDigit()));
-    }
-
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
+    @Value
     public static class AuthInfo {
-        private String id;
-        private String login;
-        private String password;
-        private String status;
+        String login;
+        String password;
+    }
 
+    private static String getRandomLogin() {
+        return faker.name().username();
+    }
 
+    private static String getRandomPassword() {
+        return faker.internet().password();
+    }
+
+    public static AuthInfo getRandomUser() {
+        return new AuthInfo(getRandomLogin(), getRandomPassword());
+    }
+
+    public static AuthInfo getAuthInfoWithTestData() {
+        return new AuthInfo("vasya", "qwerty123");
+    }
+
+    @Value
+    public static class VerificationCode {
+        String code;
+    }
+
+    public static VerificationCode getRandomVerificationCode() {
+        return new VerificationCode(faker.numerify("######"));
     }
 
     @Data
-    @AllArgsConstructor
     @NoArgsConstructor
-    public static class VerificationInfo {
+    @AllArgsConstructor
+    public static class AuthCode {
+        private String id;
+        private String user_id;
         private String code;
+        private String created;
     }
+
 
 }
-
-
